@@ -1,2 +1,2 @@
-#criticidad2
-#1-1
+def saludar():
+  return "saludo desde criticidad"

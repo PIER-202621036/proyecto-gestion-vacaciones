@@ -126,10 +126,24 @@ def obtener_empleado(empleado_id, data_excel):
           break
   return data_empleado
 
+def obtener_periodos(data_empleado, data_excel):
+  """Devuelve los periodos del empleado, del mas antiguo al mas nuevo.
+     Es una lista de diccionarios. Si aun no tiene periodos, devuelve [].
+  """
 
+  # Inicializamos la lista
+  data_periodos_empleado = []
 
+  # 1. Si resultado_obtener_empleado is None, no existe el empleado
+  if data_empleado is not None:
 
+    vacaciones = data_excel["Vacaciones"].to_dict(orient="records")
 
+    # 2. Filtrar las vacaciones del empleado usando un bucle for tradicional
+    data_periodos_empleado = []
 
-
+    for v in vacaciones:
+        if v["empleado_id"] == data_empleado["id"]:
+            data_periodos_empleado.append(v)
+  return data_periodos_empleado
 

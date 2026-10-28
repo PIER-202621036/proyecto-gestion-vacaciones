@@ -72,6 +72,60 @@ def cargar_datos(ruta=URL_EXCEL):
     datos[nombre_hoja] = df[nombre_hoja]
   return datos
 
+# Limpiar datos
+def limpiar_datos(data_excel):
+  # Se calcula una sola vez, no en cada columna
+  permitidos = [n.lower() for n in NULOS_PERMITIDOS]
+
+  data_limpia = {} # diccionario NUEVO
+
+  for nombre_hoja, df in data_excel.items():
+
+    # 1. Duplicados
+    cantidad_duplicados = df.duplicated().sum()
+    if cantidad_duplicados > 0:
+        print(f"Hoja {nombre_hoja}: {cantidad_duplicados} duplicados.")
+        df = df.drop_duplicates()
+
+    # 2. Nulos (excluyendo NULOS_PERMITIDOS), Comprensión de Listas
+    columnas_obligatorias = [
+        col 
+        for col in df.columns if col.lower() not in permitidos
+    ]
+
+    # Cuenta las CELDAS vacias en las columnas obligatorias:
+    # isna() marca True/False y el primer sum() suma por columna;
+    # el segundo sum() suma todas las columnas en un solo numero.
+    cantidad_nulos = df[columnas_obligatorias].isna().sum().sum()
+    
+    if cantidad_nulos > 0:
+        print(f"Hoja {nombre_hoja}: {cantidad_nulos} nulos no permitidos.")
+        df = df.dropna(subset=columnas_obligatorias)
+
+    # Guardamos la hoja limpia en el diccionario nuevo
+    data_limpia[nombre_hoja] = df.reset_index(drop=True)
+
+  return data_limpia
+
+def obtener_empleado(empleado_id, data_excel):
+
+  # 1. Convertir los DataFrames a listas de diccionarios sencillos
+  empleados = data_excel["Empleados"].to_dict(orient="records")
+  puestos = data_excel["Puestos"].to_dict(orient="records")
+
+  # 2. Bucle tradicional
+  data_empleado = None
+
+  for emp in empleados:
+      if emp["id"] == empleado_id:
+          data_empleado = emp.copy()
+          for p in puestos:
+              if (p["puesto_id"] == emp["puesto_id"]):
+                  data_empleado["puesto"] = p["puesto"]
+                  break
+          break
+  return data_empleado
+
 
 
 

@@ -15,19 +15,6 @@ URL_EXCEL = (
 def saludar():
   return "saludo desde datos"
 
-#
-
-# Diccionario único de configuración (alberga textos fijos y reglas)
-PARAMETROS = {
-    "estado_gozada": "Gozada",
-    "estado_programada": "Programada",
-    "decision_aprobada": "Aprobada",
-    "decision_pendiente": "Pendiente",
-    "tipo_venta": "Venta_50",
-    "respuesta_acepto": "Aceptó",
-    "fecha_corte": "2026-10-12",
-}
-
 # Hojas que usa Python (las demas del Excel son material de gestion)
 HOJAS = [
     "Empleados",                    #0
@@ -51,10 +38,33 @@ def cargar_parametros(ruta=URL_EXCEL):
       raise ConnectionError(
           f"No se pudo leer Parametros_Vacaciones: {error}"
       ) from error 
-
+  
+  parametros = {}
   for fila in df.to_dict("records"):
-      PARAMETROS[fila["regla"]] = int(fila["valor"])
-  return PARAMETROS
+      parametros[fila["regla"]] = int(fila["valor"])
+  return parametros
+
+
+# Reglas del negocio: se leen de la hoja Parametros_Vacaciones del Excel
+PARAMETROS = cargar_parametros()
+DIAS_VACACIONES_PERIODO = PARAMETROS["dias_vacaciones_periodo"]
+PORCENTAJE_VENTA = PARAMETROS["porcentaje_venta"]
+PERIODOS_CRITICOS = PARAMETROS["periodos_criticos"]
+PORCENTAJE_DESCUENTO = PARAMETROS["porcentaje_descuento"]
+DIAS_ALERTA_VENCIMIENTO = PARAMETROS["dias_alerta_vencimiento"]
+ 
+# La fecha de corte no esta en la hoja: es la fecha de los datos
+FECHA_CORTE = "2026-10-12"
+ 
+# Textos que usan las hojas (se escriben una sola vez aqui)
+ESTADO_GOZADA = "Gozada"
+ESTADO_PROGRAMADA = "Programada"
+DECISION_APROBADA = "Aprobada"
+DECISION_PENDIENTE = "Pendiente"
+TIPO_VENTA = "Venta_50"
+RESPUESTA_ACEPTO = "Aceptó"
+
+
 
 # Cargar todas las hojas del Excel
 def cargar_datos(ruta=URL_EXCEL):
@@ -163,40 +173,40 @@ def obtener_periodos(data_empleado, data_excel):
 # ==================================================================
 
 def obtener_programacion(vacacion_id, data_excel):
-    """Devuelve los bloques de programacion de un periodo.
-    Es una lista de diccionarios. Si no tiene bloques, devuelve [].
-    Ejemplo: obtener_programacion(67, data_excel) devuelve los 3 bloques
-    del periodo 2025 de Carmen García (empleado id 17).
-    """
-    hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
-    lista_programacion = hoja.to_dict(orient="records")
+  """Devuelve los bloques de programacion de un periodo.
+  Es una lista de diccionarios. Si no tiene bloques, devuelve [].
+  Ejemplo: obtener_programacion(67, data_excel) devuelve los 3 bloques
+  del periodo 2025 de Carmen García (empleado id 17).
+  """
+  hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
+  lista_programacion = hoja.to_dict(orient="records")
 
-    # Filtrar los bloques del periodo con un bucle for tradicional
-    data_programacion_vacaciones = []
-    for programacion in lista_programacion:
-        if programacion["vacacion_id"] == vacacion_id:
-            data_programacion_vacaciones.append(programacion)
-    return data_programacion_vacaciones
+  # Filtrar los bloques del periodo con un bucle for tradicional
+  data_programacion_vacaciones = []
+  for programacion in lista_programacion:
+      if programacion["vacacion_id"] == vacacion_id:
+          data_programacion_vacaciones.append(programacion)
+  return data_programacion_vacaciones
 
 def obtener_programacion_empleado(empleado_id, data_excel):
-    """Devuelve todos los bloques de programación de un empleado buscando por su ID.
-    Si no tiene bloques o data_empleado es None, devuelve [].
-    """
-    if empleado_id is None:
-        return []
+  """Devuelve todos los bloques de programación de un empleado buscando por su ID.
+  Si no tiene bloques o data_empleado es None, devuelve [].
+  """
+  if empleado_id is None:
+      return []
 
 
-    # Obtenemos la hoja desde HOJAS de forma dinámica
-    hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
-    lista_programacion = hoja.to_dict(orient="records")
+  # Obtenemos la hoja desde HOJAS de forma dinámica
+  hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
+  lista_programacion = hoja.to_dict(orient="records")
 
-    data_programacion_empleado = []
+  data_programacion_empleado = []
 
-    for programacion in lista_programacion:
-        if programacion.get("empleado_id") == empleado_id:
-            data_programacion_empleado.append(programacion)
+  for programacion in lista_programacion:
+      if programacion.get("empleado_id") == empleado_id:
+          data_programacion_empleado.append(programacion)
 
-    return data_programacion_empleado
+  return data_programacion_empleado
 
 
 

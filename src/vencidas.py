@@ -1,4 +1,4 @@
-import datos  # pyright: ignore[reportMissingImports]
+from . import datos  # pyright: ignore[reportMissingImports]
 
 from datetime import date
 
@@ -62,8 +62,8 @@ def calcular_dias_programados(periodo, programacion):
  
  
 def calcular_dias_sin_cubrir(periodo, ofertas, programacion):
-  """Devuelve dias pendientes - vendidos - programados aprobados.
-  Nunca baja de 0.
+  """Devuelve la resta de dias pendientes - vendidos - programados aprobados.
+  hacemos que nunca este bajo de 0.
   """
   vendidos = calcular_dias_vendidos(periodo, ofertas)
   programados = calcular_dias_programados(periodo, programacion)

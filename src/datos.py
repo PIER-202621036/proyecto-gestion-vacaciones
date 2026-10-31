@@ -1,3 +1,7 @@
+# ==================================================================
+# ZONA COMUN de datos.py: depuracion de datos
+# ==================================================================
+
 """Datos del proyecto: carga, limpieza y acceso a las hojas."""
 import pandas as pd
 
@@ -26,14 +30,14 @@ PARAMETROS = {
 
 # Hojas que usa Python (las demas del Excel son material de gestion)
 HOJAS = [
-    "Empleados", 
-    "Puestos", 
-    "Vacaciones", 
-    "Programacion_Vacaciones",
-    "Ofertas_Compensacion", 
-    "Parametros_Vacaciones",
-    "Parametros_Criticidad", 
-    "Niveles_Criticidad"
+    "Empleados",                    #0
+    "Puestos",                      #1        
+    "Vacaciones",                   #2
+    "Programacion_Vacaciones",      #3
+    "Ofertas_Compensacion",         #4
+    "Parametros_Vacaciones",        #5
+    "Parametros_Criticidad",        #6
+    "Niveles_Criticidad"            #7
 ]
 
 # Unicas columnas que pueden estar vacias (segun el Diccionario)
@@ -107,6 +111,11 @@ def limpiar_datos(data_excel):
 
   return data_limpia
 
+
+# ==================================================================
+# ZONA PIER de datos.py: obtener empleado, periodos
+# ==================================================================
+
 def obtener_empleado(empleado_id, data_excel):
 
   # 1. Convertir los DataFrames a listas de diccionarios sencillos
@@ -145,5 +154,90 @@ def obtener_periodos(data_empleado, data_excel):
     for v in vacaciones:
         if v["empleado_id"] == data_empleado["id"]:
             data_periodos_empleado.append(v)
-  return data_periodos_empleado
+  #return data_periodos_empleado 
+  #return sorted(data_periodos_empleado, key=lambda p: p["periodo"], reverse=True)
+  return sorted(data_periodos_empleado, key=lambda p: p["periodo"])
+
+# ==================================================================
+# ZONA DAVID de datos.py: programacion y ofertas de un periodo
+# ==================================================================
+
+def obtener_programacion(vacacion_id, data_excel):
+    """Devuelve los bloques de programacion de un periodo.
+    Es una lista de diccionarios. Si no tiene bloques, devuelve [].
+    Ejemplo: obtener_programacion(67, data_excel) devuelve los 3 bloques
+    del periodo 2025 de Carmen García (empleado id 17).
+    """
+    hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
+    lista_programacion = hoja.to_dict(orient="records")
+
+    # Filtrar los bloques del periodo con un bucle for tradicional
+    data_programacion_vacaciones = []
+    for programacion in lista_programacion:
+        if programacion["vacacion_id"] == vacacion_id:
+            data_programacion_vacaciones.append(programacion)
+    return data_programacion_vacaciones
+
+def obtener_programacion_empleado(empleado_id, data_excel):
+    """Devuelve todos los bloques de programación de un empleado buscando por su ID.
+    Si no tiene bloques o data_empleado es None, devuelve [].
+    """
+    if empleado_id is None:
+        return []
+
+
+    # Obtenemos la hoja desde HOJAS de forma dinámica
+    hoja = data_excel[HOJAS[3]] # Refiere a 'Programacion_Vacaciones'
+    lista_programacion = hoja.to_dict(orient="records")
+
+    data_programacion_empleado = []
+
+    for programacion in lista_programacion:
+        if programacion.get("empleado_id") == empleado_id:
+            data_programacion_empleado.append(programacion)
+
+    return data_programacion_empleado
+
+
+
+def obtener_ofertas(vacacion_id, data_excel):
+    """Devuelve las ofertas de compensacion de un periodo.
+    Incluye Venta_50 e Indemnizacion. Es una lista de diccionarios.
+    Si no tiene ofertas, devuelve [].
+    """
+    hoja = data_excel[HOJAS[4]] # Refiere a 'Ofertas_Compensacion'
+    lista_ofertas = hoja.to_dict(orient="records")
+
+    # Filtrar las ofertas del periodo con un bucle for tradicional
+    data_ofertas_periodo = []
+    for oferta in lista_ofertas:
+        if oferta["vacacion_id"] == vacacion_id:
+            data_ofertas_periodo.append(oferta)
+    return data_ofertas_periodo
+
+def obtener_ofertas_empleado(empleado_id, data_excel):
+    """Devuelve todas las ofertas de compensación de un empleado buscando por su ID.
+    Si no tiene ofertas o data_empleado es None, devuelve [].
+    """
+    if empleado_id is None:
+        return []
+
+    hoja = data_excel[HOJAS[4]] # Refiere a 'Ofertas_Compensacion'
+    lista_ofertas = hoja.to_dict(orient="records")
+
+    data_ofertas_empleado = []
+
+    for oferta in lista_ofertas:
+        if oferta.get("empleado_id") == empleado_id:
+            data_ofertas_empleado.append(oferta)
+
+    return data_ofertas_empleado
+
+
+
+
+
+
+
+
 

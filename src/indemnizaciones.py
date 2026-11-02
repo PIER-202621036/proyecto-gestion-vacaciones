@@ -20,8 +20,12 @@ def calcular_indemnizacion(salario, dias_sin_cubrir, parametros):
     if salario < 0 or dias_sin_cubrir < 0:
         raise ValueError("Salario y dias sin cubrir no pueden ser negativos")
     if dias_sin_cubrir == 0:
-        return {"indemnizacion": 0.0, "remuneracion": 0.0,
-                "descuento": 0.0, "bruto": 0.0, "neto": 0.0}
+        return {  "indemnizacion": 0.0, 
+                  "remuneracion": 0.0,
+                  "descuento": 0.0, 
+                  "bruto": 0.0, 
+                  "neto": 0.0
+                }
  
     factor = dias_sin_cubrir / parametros["dias_vacaciones_periodo"]
  
@@ -55,8 +59,10 @@ def calcular_sueldo_mes(salario, parametros):
         raise ValueError("El salario no puede ser negativo")
     bruto = round(salario * parametros["sueldos_mes_goce"], 2)
     descuento = round(bruto * parametros["porcentaje_descuento"] / 100, 2)
-    return {"bruto": bruto, "descuento": descuento,
-            "neto": round(bruto - descuento, 2)}
+    return {"bruto": bruto, 
+            "descuento": descuento,
+            "neto": round(bruto - descuento, 2)
+    }
 
 def estado_gestion(ofertas):
     """Devuelve la gestion de la indemnizacion de un periodo.
@@ -75,7 +81,6 @@ def estado_gestion(ofertas):
 
 def historial_indemnizacion(data_empleado, data_excel, fecha_corte=None):
     """Devuelve el HISTORIAL: todos los periodos indemnizables del empleado.
- 
     Un periodo es indemnizable si esta vencido y tiene dias sin cubrir.
     Incluye los ya Pagados: es lo que el empleado tiene, no lo que se le debe
     pagar ahora (eso lo da resumen_indemnizacion).
@@ -88,9 +93,9 @@ def historial_indemnizacion(data_empleado, data_excel, fecha_corte=None):
  
     historial = []
     for periodo in datos.obtener_periodos(data_empleado, data_excel):
-        id_periodo = periodo["vacacion_id"]
-        ofertas = datos.obtener_ofertas(id_periodo, data_excel)
-        programacion = datos.obtener_programacion(id_periodo, data_excel)
+        vacacion_id = periodo["vacacion_id"]
+        ofertas = datos.obtener_ofertas(vacacion_id, data_excel)
+        programacion = datos.obtener_programacion(vacacion_id, data_excel)
  
         # Funciones de Pier: dias sin cubrir y estado del periodo
         sin_cubrir = vencidas.calcular_dias_sin_cubrir(
@@ -106,20 +111,23 @@ def historial_indemnizacion(data_empleado, data_excel, fecha_corte=None):
  
         historial.append({
             "periodo": periodo["periodo"],
-            "vacacion_id": id_periodo,
+            "vacacion_id": vacacion_id,
             "dias_sin_cubrir": sin_cubrir,
             "gestion": estado_gestion(ofertas),
         })
+
+    # Del periodo mas antiguo al mas nuevo
+    historial.sort(key=lambda p: p["periodo"])
     return historial
- 
  
 def resumen_indemnizacion(data_empleado, data_excel, parametros,
                           fecha_corte=None):
     """Calcula la BOLETA del proximo pago: lo que se le tiene que pagar.
     La boleta tiene, en este orden:
     1. El sueldo del mes completo, UNA sola vez, con descuento.
-    2. La remuneracion vacacional de cada periodo pendiente, con descuento.
-    3. La indemnizacion de cada periodo pendiente, sin descuento.
+    2. Por cada periodo pendiente, del mas antiguo al mas nuevo: su
+       remuneracion vacacional (con descuento) y su indemnizacion (sin
+       descuento).
     Los periodos ya Pagados no entran (ya se pagaron). Sin periodos por
     pagar, la boleta solo trae el sueldo del mes.
     Ejemplo: id 91 -> bruto 43200, descuento 5400, neto 37800.
@@ -136,11 +144,12 @@ def resumen_indemnizacion(data_empleado, data_excel, parametros,
  
     salario = data_empleado["salario"]
     sueldo = calcular_sueldo_mes(salario, parametros)
+    # "-" en vez de None: asi Pandas no vuelve decimal el periodo (2025.0)
     resumen["lineas"].append({
         "concepto": "Sueldo del mes", 
-        "periodo": None, 
-        "dias": None,
-        "gestion": None, 
+        "periodo": "-", 
+        "dias": "-",
+        "gestion": "-", 
         "bruto": sueldo["bruto"],
         "descuento": sueldo["descuento"], 
         "neto": sueldo["neto"],
@@ -152,36 +161,38 @@ def resumen_indemnizacion(data_empleado, data_excel, parametros,
                                            fecha_corte):
         if periodo["gestion"] != "Pagada":
             pendientes.append(periodo)
+    # Del periodo mas antiguo al mas nuevo
+    pendientes.sort(key=lambda p: p["periodo"])
  
-    remuneraciones = []
-    indemnizaciones = []
+    # Por cada periodo: primero su remuneracion vacacional y luego su
+    # indemnizacion
     for periodo in pendientes:
         montos = calcular_indemnizacion(
             salario, periodo["dias_sin_cubrir"], parametros
         )
-        datos_periodo = {
+        neto_remuneracion = round(
+            montos["remuneracion"] - montos["descuento"], 2
+        )
+ 
+        resumen["lineas"].append({
+            "concepto": "Remuneración vacacional",
             "periodo": periodo["periodo"],
             "dias": periodo["dias_sin_cubrir"],
             "gestion": periodo["gestion"],
-        }
-        remuneraciones.append({
-            "concepto": "Remuneración vacacional", 
-            **datos_periodo,
-            "bruto": montos["remuneracion"], 
+            "bruto": montos["remuneracion"],
             "descuento": montos["descuento"],
-            "neto": round(montos["remuneracion"] - montos["descuento"], 2),
+            "neto": neto_remuneracion,
         })
-        indemnizaciones.append({
-            "concepto": "Indemnización vacacional", 
-            **datos_periodo,
-            "bruto": montos["indemnizacion"], 
+        resumen["lineas"].append({
+            "concepto": "Indemnización vacacional",
+            "periodo": periodo["periodo"],
+            "dias": periodo["dias_sin_cubrir"],
+            "gestion": periodo["gestion"],
+            "bruto": montos["indemnizacion"],
             "descuento": 0.0,
             "neto": montos["indemnizacion"],
         })
         resumen["dias_a_pagar"] += periodo["dias_sin_cubrir"]
- 
-    resumen["lineas"].extend(remuneraciones)
-    resumen["lineas"].extend(indemnizaciones)
  
     for linea in resumen["lineas"]:
         resumen["bruto"] += linea["bruto"]
@@ -190,3 +201,4 @@ def resumen_indemnizacion(data_empleado, data_excel, parametros,
     for clave in ("bruto", "descuento", "neto"):
         resumen[clave] = round(resumen[clave], 2)
     return resumen
+

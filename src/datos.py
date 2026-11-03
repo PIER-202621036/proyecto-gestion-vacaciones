@@ -127,7 +127,7 @@ def limpiar_datos(data_excel):
 
 
 # ==================================================================
-# ZONA PIER de datos.py: obtener empleado, periodos
+# ZONA DE VENCIDAS (pier): obtener empleado, periodos
 # ==================================================================
 
 def obtener_empleado(empleado_id, data_excel):
@@ -173,7 +173,7 @@ def obtener_periodos(data_empleado, data_excel):
   return sorted(data_periodos_empleado, key=lambda p: p["periodo"])
 
 # ==================================================================
-# ZONA DAVID de datos.py: programacion y ofertas de un periodo
+# ZONA DE INDEMNIZACIONES (david): programacion y ofertas de un periodo
 # ==================================================================
 
 def obtener_programacion(vacacion_id, data_excel):
@@ -247,7 +247,56 @@ def obtener_ofertas_empleado(empleado_id, data_excel):
 
     return data_ofertas_empleado
 
+# ==================================================================
+# ZONA CRITICIDAD (Jorge): puestos, reglas y niveles
+# ==================================================================
 
+
+def obtener_puesto(puesto_id, data_excel):
+    """Devuelve un puesto como diccionario, con sus 4 notas.
+    Ejemplo: obtener_puesto("P09", data_excel) devuelve el Senior Geologist
+    con importancia 5, dificultad_reemplazo 4, impacto_ausencia 5 y
+    disponibilidad_reemplazo 3.
+    Lanza ValueError si el puesto no existe.
+    """
+    df_puestos = data_excel["Puestos"]
+ 
+    # Filtrado condicional: solo las filas donde puesto_id coincide
+    df_puesto = df_puestos[df_puestos["puesto_id"] == puesto_id]
+    if df_puesto.empty:
+        raise ValueError(f"No existe el puesto {puesto_id}")
+    return df_puesto.to_dict(orient="records")[0]
+
+def obtener_regla(nombre, data_excel):
+    """Devuelve la regla de una variable de criticidad como diccionario.
+    Ejemplo: obtener_regla("importancia", data_excel) devuelve peso 0.4,
+    nota_min 1 y nota_max 5.
+    Lanza ValueError si la variable no existe.
+    """
+    df_reglas = data_excel["Parametros_Criticidad"]
+    df_regla = df_reglas[df_reglas["variable"] == nombre]
+    if df_regla.empty:
+        raise ValueError(f"No existe la variable de criticidad {nombre}")
+    return df_regla.to_dict(orient="records")[0]
+ 
+ 
+def obtener_niveles(data_excel):
+    """Devuelve los niveles de criticidad, del score mas bajo al mas alto.
+    Es una lista de diccionarios: Bajo (desde 0), Medio (40), Alto (70)
+    y Critico (85).
+    """
+    df_niveles = data_excel["Niveles_Criticidad"]
+
+    #to_dict(orient="records") convierte cada fila de la tabla en un diccionario
+    #y el conjunto en una lista, ejemplo:
+    #niveles = [
+      #{"score_min": 0,  "score_max": 39.99,  "nivel": "Bajo"},
+      #{"score_min": 40, "score_max": 69.99,  "nivel": "Medio"},
+      #{"score_min": 70, "score_max": 84.99,  "nivel": "Alto"},
+      #{"score_min": 85, "score_max": 100.0,  "nivel": "Critico"},
+    #]
+    niveles = df_niveles.to_dict(orient="records")
+    return sorted(niveles, key=lambda nivel: nivel["score_min"])
 
 
 

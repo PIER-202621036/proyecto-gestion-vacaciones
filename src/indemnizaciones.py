@@ -29,7 +29,12 @@ def calcular_indemnizacion(salario, dias_sin_cubrir, parametros):
  
     factor = dias_sin_cubrir / parametros["dias_vacaciones_periodo"]
  
+    # esta seria la version mas entendible, pero decidimos usar     
+    # indemnizacion = round(salario * parametros["sueldos_indemnizacion"] * factor, 2)
+    # remuneracion = round(salario * parametros["sueldos_remuneracion_vacacional"] * factor, 2) 
     # lambda + map(): la misma formula para los dos conceptos
+    # cantidad_sueldo es el parametro que le damos a lambda y lo que 
+    # va a tener es el valor de  sueldos[0] y despues  sueldos[1] en ambos casos es 1
     sueldos = [
         parametros["sueldos_indemnizacion"],
         parametros["sueldos_remuneracion_vacacional"],
@@ -117,6 +122,9 @@ def historial_indemnizacion(data_empleado, data_excel, fecha_corte=None):
         })
 
     # Del periodo mas antiguo al mas nuevo
+    # aqui el lambda devuelve el valor de periodo ejemplo: 2025,2023,2024
+    # con esos años Python ordena de menor a mayor,
+    # y la lista queda [2023, 2024, 2025]
     historial.sort(key=lambda p: p["periodo"])
     return historial
  
@@ -192,6 +200,8 @@ def resumen_indemnizacion(data_empleado, data_excel, parametros,
             "descuento": 0.0,
             "neto": montos["indemnizacion"],
         })
+        #El += significa, "suma esto a lo que ya tenemos y guárdalo". Es lo mismo que:
+        #resumen["dias_a_pagar"] = resumen["dias_a_pagar"] + periodo["dias_sin_cubrir"]        
         resumen["dias_a_pagar"] += periodo["dias_sin_cubrir"]
  
     for linea in resumen["lineas"]:

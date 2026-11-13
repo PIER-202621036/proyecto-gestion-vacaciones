@@ -68,7 +68,8 @@ TIPO_INDEMNIZACION = "Indemnizacion"
 OFERTA_PAGADA = "Pagado"
 OFERTA_AVISADA = "Avisado"
 
-
+NIVEL_ALTO = "Alto"
+NIVEL_CRITICO = "Critico"
 
 # Cargar todas las hojas del Excel
 def cargar_datos(ruta=URL_EXCEL):
